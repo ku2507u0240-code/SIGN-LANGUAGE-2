@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Detect Sign — Sign Language</title>
+  <meta name="description" content="Show a hand sign to your webcam and the AI displays the sign name in real-time."/>
+  <link rel="stylesheet" href="/static/css/style.css"/>
+  <style>
+    .meaning-text {
+      font-size: 40px; font-weight: 900; line-height: 1.2;
+      text-align: center; min-height: 76px;
+      transition: all 0.3s cubic-bezier(.4,0,.2,1);
+      word-break: break-word; max-width: 100%; padding: 0 8px;
+    }
+    .meaning-detected {
+      background: linear-gradient(135deg, var(--primary-light), var(--accent-light));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .meaning-unknown {
+      color: var(--danger); -webkit-text-fill-color: var(--danger);
+      animation: shake 0.4s ease;
+    }
+    .meaning-idle { color: var(--muted2); -webkit-text-fill-color: var(--muted2); }
+    @keyframes shake {
+      0%,100%{transform:translateX(0)} 25%{transform:translateX(-7px)} 75%{transform:translateX(7px)}
+    }
+  </style>
+</head>
+<body>
+<div class="bg-orbs">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+</div>
+
+<div class="page-wrapper">
+  <nav class="navbar">
+    <a href="/" class="nav-logo">
+      <div class="logo-mark">SL</div>
+      <span class="logo-text">Sign Language</span>
+    </a>
+    <div class="nav-links">
+      <a href="/" class="nav-link">Home</a>
+      <a href="/add" class="nav-link">Add Sign</a>
+      <a href="/detect" class="nav-link active">Detect Sign</a>
+    </div>
+  </nav>
+
+  <div class="section-header">
+    <h2>Detect Sign Language</h2>
+    <p>Show your hand sign to the camera. The AI identifies it in real-time and displays the sign name.</p>
+  </div>
+
+  <div id="noSignsAlert" class="alert alert-info" style="display:none;">
+    No signs in the database yet.
+    <a href="/add" style="color:var(--primary-light);font-weight:700;margin-left:6px;">Add some signs first &rarr;</a>
+  </div>
+
+  <div class="two-col" style="align-items:start;">
+
+    <!-- Camera -->
+    <div>
+      <div class="camera-wrap">
+        <div id="loading" class="loading-overlay">
+          <div class="spinner"></div>
+          <div class="loading-text">Loading hand tracker…</div>
+        </div>
+        <video id="video" playsinline style="display:none"></video>
+        <canvas id="canvas"></canvas>
+        <div class="camera-status">
+          <div class="status-dot" id="statusDot"></div>
+          <span id="statusTxt">Initializing…</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Result + History -->
+    <div style="display:flex;flex-direction:column;gap:22px;">
+
+      <div class="detect-display" id="resultCard">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;">Detected Sign</div>
+        <div class="meaning-text meaning-idle" id="meaningDisplay">?</div>
+        <div class="predict-hint" id="predictHint">Show a sign to the camera…</div>
+        <div class="confidence-wrap">
+          <div class="confidence-label" id="confText">Confidence: &mdash;</div>
+          <div class="confidence-bar">
+            <div class="confidence-fill" id="confFill" style="width:0%"></div>
+          </div>
+        </div>
+        <a href="/add" class="btn btn-secondary" style="font-size:13px;padding:9px 20px;">Add More Signs</a>
+      </div>
+
+      <div class="history-panel">
+        <div class="history-title">Recent Detections</div>
+        <div class="history-list" id="historyList">
+          <div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">No detections yet</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <p>Sign Language Recognition &copy; 2026 &mdash; Empowering communication through AI</p>
+  </footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3/drawing_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4/hands.js" crossorigin="anonymous"></script>
+<script src="/static/js/hands_utils.js"></script>
+<script src="/static/js/detect.js"></script>
+</body>
+</html>

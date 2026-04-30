@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Sign Language — Real-Time Recognition</title>
+  <meta name="description"
+    content="Record and detect custom sign language gestures in real-time using AI hand tracking." />
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+
+<body>
+  <div class="bg-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <div class="page-wrapper">
+    <nav class="navbar">
+      <a href="/" class="nav-logo">
+        <div class="logo-mark">SL</div>
+        <span class="logo-text">Sign Language</span>
+      </a>
+      <div class="nav-links">
+        <a href="/" class="nav-link active">Home</a>
+        <a href="/add" class="nav-link">Add Sign</a>
+        <a href="/detect" class="nav-link">Detect Sign</a>
+      </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+      <h1 class="hero-title">
+        Real-Time<br><span class="gradient-text">Sign Language</span><br>Recognition
+      </h1>
+      <p class="hero-desc">
+        Record your own hand gestures using your webcam and detect them in real-time.
+        Built to empower the deaf and hard-of-hearing community.
+      </p>
+      <div class="hero-actions">
+        <a href="/add" class="btn btn-primary">Add Sign</a>
+        <a href="/detect" class="btn btn-secondary">Detect Sign</a>
+      </div>
+    </section>
+
+    <!-- Stats -->
+    <section class="stats">
+      <div class="stat-card">
+        <div class="stat-number" id="statSigns">{{ sign_count }}</div>
+        <div class="stat-label">Signs Stored</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">Real-Time</div>
+        <div class="stat-label">Detection Speed</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">Custom</div>
+        <div class="stat-label">AI Classifier</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">MediaPipe</div>
+        <div class="stat-label">Hand Tracking</div>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <div class="features">
+      <div class="feature-card" onclick="location.href='/add'" id="feat-add">
+        <div class="feature-icon-box">+</div>
+        <h3>Add Sign</h3>
+        <p>Use your webcam to record any hand gesture and give it a name. The AI learns from your recordings instantly.
+        </p>
+        <span class="feature-arrow">&#8594;</span>
+      </div>
+      <div class="feature-card" onclick="location.href='/detect'" id="feat-detect">
+        <div class="feature-icon-box" style="font-size:16px;">&#9673;</div>
+        <h3>Detect Sign</h3>
+        <p>Show a sign to your camera and the AI identifies it in real-time, displaying the name with a confidence
+          score.</p>
+        <span class="feature-arrow">&#8594;</span>
+      </div>
+      <div class="feature-card" id="feat-ai">
+        <div class="feature-icon-box" style="font-size:16px;">&#9670;</div>
+        <h3>Custom AI Model</h3>
+        <p>Uses Google MediaPipe for 21-point hand landmark detection and a K-Nearest Neighbors classifier — no cloud
+          required.</p>
+        <span class="feature-arrow">&#8594;</span>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <p>Sign Language Recognition &copy; 2026 &mdash; Empowering communication through AI</p>
+    </footer>
+  </div>
+
+  <script>
+    fetch('/api/stats').then(r => r.json()).then(d => {
+      document.getElementById('statSigns').textContent = d.sign_count;
+    }).catch(() => { });
+  </script>
+</body>
+
+</html>

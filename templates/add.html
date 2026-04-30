@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Add Sign — Sign Language</title>
+  <meta name="description" content="Record a sign language gesture via webcam with live AI detection feedback."/>
+  <link rel="stylesheet" href="/static/css/style.css"/>
+  <style>
+    .live-panel {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 24px 26px;
+      display: flex; flex-direction: column; gap: 12px;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    .live-panel.active-detection {
+      border-color: rgba(16,185,129,0.4);
+      box-shadow: 0 0 24px rgba(16,185,129,0.08);
+    }
+    .live-panel.no-detection { border-color: rgba(239,68,68,0.2); }
+
+    .live-header {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 11px; font-weight: 700; color: var(--muted);
+      letter-spacing: 1.2px; text-transform: uppercase;
+    }
+    .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted2); transition: background 0.3s; flex-shrink: 0; }
+    .live-dot.on  { background: var(--success); animation: blink 1.4s infinite; }
+    .live-dot.off { background: var(--danger); }
+
+    .live-sign-name {
+      font-size: 44px; font-weight: 900; line-height: 1.1;
+      min-height: 52px; word-break: break-word;
+      transition: all 0.2s;
+    }
+    .lsn-known {
+      background: linear-gradient(135deg, var(--primary-light), var(--accent-light));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .lsn-idle    { color: var(--muted2); -webkit-text-fill-color: var(--muted2); }
+    .lsn-unknown { color: var(--danger); -webkit-text-fill-color: var(--danger); }
+
+    .live-subtitle { font-size: 13px; color: var(--muted); font-weight: 500; min-height: 18px; }
+
+    .live-bar-row { display: flex; align-items: center; gap: 10px; }
+    .live-bar-wrap { flex: 1; height: 5px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; }
+    .live-bar-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--primary), var(--accent)); transition: width 0.2s ease; }
+    .live-pct { font-size: 12px; color: var(--muted); font-weight: 700; min-width: 34px; text-align: right; }
+  </style>
+</head>
+<body>
+<div class="bg-orbs">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+</div>
+
+<div class="page-wrapper">
+  <nav class="navbar">
+    <a href="/" class="nav-logo">
+      <div class="logo-mark">SL</div>
+      <span class="logo-text">Sign Language</span>
+    </a>
+    <div class="nav-links">
+      <a href="/" class="nav-link">Home</a>
+      <a href="/add" class="nav-link active">Add Sign</a>
+      <a href="/detect" class="nav-link">Detect Sign</a>
+    </div>
+  </nav>
+
+  <div class="section-header">
+    <h2>Add Sign Language</h2>
+    <p>Move your hand in front of the camera. The Live Detection panel updates in real-time. Name the sign and click Record to save it.</p>
+  </div>
+
+  <div id="alert" class="alert"></div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:28px;padding:0 48px;max-width:1200px;margin:0 auto 32px;">
+
+    <!-- Camera -->
+    <div>
+      <div class="camera-wrap">
+        <div id="loading" class="loading-overlay">
+          <div class="spinner"></div>
+          <div class="loading-text">Loading hand tracker…</div>
+        </div>
+        <video id="video" playsinline style="display:none"></video>
+        <canvas id="canvas"></canvas>
+        <div class="camera-status">
+          <div class="status-dot" id="statusDot"></div>
+          <span id="statusTxt">Initializing…</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right column: live detection + controls -->
+    <div style="display:flex;flex-direction:column;gap:20px;">
+
+      <!-- Live Detection -->
+      <div class="live-panel" id="livePanel">
+        <div class="live-header">
+          <div class="live-dot" id="liveDot"></div>
+          <span>Live Detection &mdash; Move Your Hand</span>
+        </div>
+        <div class="live-sign-name lsn-idle" id="liveSignName">&#8212;</div>
+        <div class="live-subtitle" id="liveSubtitle">Waiting for hand…</div>
+        <div class="live-bar-row">
+          <div class="live-bar-wrap">
+            <div class="live-bar-fill" id="liveBarFill" style="width:0%"></div>
+          </div>
+          <div class="live-pct" id="livePct">&#8212;</div>
+        </div>
+      </div>
+
+      <!-- Record Controls -->
+      <div class="glass-card" style="padding:26px;display:flex;flex-direction:column;gap:16px;">
+        <h3 style="font-size:17px;font-weight:700;letter-spacing:-0.3px;">Record New Sign</h3>
+
+        <div class="input-group">
+          <label for="signName">Sign Name <span style="color:var(--danger)">*</span></label>
+          <input id="signName" type="text" class="input-field"
+                 placeholder="e.g. Hello, Thank You, Help, Stop…"
+                 maxlength="60" autocomplete="off"/>
+        </div>
+
+        <div id="progressWrap" class="progress-wrap" style="display:none;">
+          <div class="progress-label">
+            <span>Capturing hand positions…</span>
+            <span id="progressCount">0 / 50</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill" style="width:0%"></div>
+          </div>
+        </div>
+
+        <button id="recordBtn" class="btn btn-primary" style="width:100%;justify-content:center;">
+          Start Recording
+        </button>
+
+        <p style="font-size:12px;color:var(--muted);line-height:1.75;margin:0;">
+          Watch the live panel above &mdash; it shows what the AI currently detects as you move.
+          Recording captures 50 frames of hand landmark data.
+          Add the same sign multiple times for higher accuracy.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gallery -->
+  <div class="section-header" style="padding-top:8px;">
+    <h2>Saved Signs</h2>
+    <p>All recorded signs. The AI classifier trains on all of them automatically.</p>
+  </div>
+  <div id="gallery" class="gallery-grid">
+    <div class="empty-state" style="grid-column:1/-1;">
+      <div class="empty-icon">&#9678;</div>
+      <p>No signs saved yet. Record your first one above.</p>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <p>Sign Language Recognition &copy; 2026 &mdash; Empowering communication through AI</p>
+  </footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3/drawing_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4/hands.js" crossorigin="anonymous"></script>
+<script src="/static/js/hands_utils.js"></script>
+<script src="/static/js/add.js"></script>
+</body>
+</html>
